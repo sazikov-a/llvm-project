@@ -22,16 +22,16 @@ void OptionalAccessCheck::registerMatchers(ast_matchers::MatchFinder *Finder) {
       qualType(hasDeclaration(cxxRecordDecl(hasAnyName(OptionalTypes))))
           .bind("optional-type");
 
-  auto OptionalMatchType = hasCanonicalType(BindOptionalType);
+  auto OptionalMatchType = hasType(hasCanonicalType(BindOptionalType));
 
   auto OptionalStarMatcher =
       cxxOperatorCallExpr(hasOverloadedOperatorName("*"),
-                          hasUnaryOperand(hasType(OptionalMatchType)))
+                          hasUnaryOperand(OptionalMatchType))
           .bind("star-call");
 
   auto OptionalArrowMatcher =
       cxxOperatorCallExpr(hasOverloadedOperatorName("->"),
-                          hasUnaryOperand(hasType(OptionalMatchType)))
+                          hasUnaryOperand(OptionalMatchType))
           .bind("arrow-call");
 
   Finder->addMatcher(callExpr(ignoringImpCasts(

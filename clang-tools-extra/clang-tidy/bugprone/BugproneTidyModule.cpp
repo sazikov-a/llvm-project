@@ -54,6 +54,7 @@
 #include "NonZeroEnumToBoolConversionCheck.h"
 #include "NondeterministicPointerIterationOrderCheck.h"
 #include "NotNullTerminatedResultCheck.h"
+#include "OptionalAccessCheck.h"
 #include "OptionalValueConversionCheck.h"
 #include "ParentVirtualCallCheck.h"
 #include "PointerArithmeticOnPolymorphicObjectCheck.h"
@@ -189,6 +190,8 @@ public:
         "bugprone-multiple-statement-macro");
     CheckFactories.registerCheck<NondeterministicPointerIterationOrderCheck>(
         "bugprone-nondeterministic-pointer-iteration-order");
+    CheckFactories.registerCheck<OptionalAccessCheck>(
+        "bugprone-optional-access");
     CheckFactories.registerCheck<OptionalValueConversionCheck>(
         "bugprone-optional-value-conversion");
     CheckFactories.registerCheck<PointerArithmeticOnPolymorphicObjectCheck>(

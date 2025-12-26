@@ -24,6 +24,8 @@ namespace std {
     const T& get() const;
     T& get();
     T value_or(T) const;
+
+    explicit operator bool() const;
   };
 
   template <class T>
@@ -40,6 +42,8 @@ namespace boost {
     const T& operator*() const;
     const T* operator->() const;
     const T& get() const;
+
+    explicit operator bool() const;
   };
 }
 
@@ -51,6 +55,8 @@ namespace absl {
     const T& operator*() const;
     const T* operator->() const;
     const T& value() const;
+
+    explicit operator bool() const;
   };
 }
 
@@ -62,6 +68,8 @@ struct CustomOptional {
   T& operator*();
   T* operator->();
   T& Ooo();
+
+  explicit operator bool() const;
 };
 
 void testStarAccess() {
@@ -118,4 +126,36 @@ void testCustomArrowAccess() {
   int x = d->x;
   // CHECK-MESSAGES-CUSTOM: :[[@LINE-1]]:11: warning: remove error-prone optional access (via operator '->') to 'CustomOptional<Foo>' [bugprone-optional-access]
   // CHECK-FIXES-CUSTOM: int x = d->x;
+}
+
+void testExplicitBoolConversion() {
+  std::optional<int> x;
+
+  if (x) {
+    // CHECK-MESSAGES: :[[@LINE-1]]:7: warning: remove error-prone implicit convertion from 'std::optional<int>' to bool [bugprone-optional-access]
+    // CHECK-FIXES: if (x) { 
+    int y = x.value();
+  }
+
+  if (!x) {
+    // CHECK-MESSAGES: :[[@LINE-1]]:8: warning: remove error-prone implicit convertion from 'std::optional<int>' to bool [bugprone-optional-access]
+    // CHECK-FIXES: if (!x) { 
+    int y = x.value();
+  }
+}
+
+void testCustomExplicitBoolConversion() {
+  CustomOptional<int> x;
+
+  if ((x)) {
+    // CHECK-MESSAGES-CUSTOM: :[[@LINE-1]]:7: warning: remove error-prone implicit convertion from 'CustomOptional<int>' to bool [bugprone-optional-access]
+    // CHECK-FIXES-CUSTOM: if (x) { 
+    int y = x.Read();
+  }
+
+  if (!(x)) {
+    // CHECK-MESSAGES-CUSTOM: :[[@LINE-1]]:8: warning: remove error-prone implicit convertion from 'CustomOptional<int>' to bool [bugprone-optional-access]
+    // CHECK-FIXES-CUSTOM: if (!x) { 
+    int y = x.Read();
+  }
 }

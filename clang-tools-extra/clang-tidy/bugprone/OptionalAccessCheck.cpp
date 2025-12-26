@@ -1,6 +1,7 @@
 #include "OptionalAccessCheck.h"
 #include "../utils/OptionsUtils.h"
 #include "clang/AST/DeclCXX.h"
+#include "clang/AST/Expr.h"
 #include "clang/AST/ExprCXX.h"
 #include "clang/AST/Type.h"
 #include "clang/ASTMatchers/ASTMatchers.h"
@@ -34,8 +35,17 @@ void OptionalAccessCheck::registerMatchers(ast_matchers::MatchFinder *Finder) {
                           hasUnaryOperand(OptionalMatchType))
           .bind("arrow-call");
 
-  Finder->addMatcher(callExpr(ignoringImpCasts(
-                         anyOf(OptionalStarMatcher, OptionalArrowMatcher))),
+  auto OperatorBoolMatcher =
+      implicitCastExpr(
+          hasImplicitDestinationType(qualType(booleanType())),
+          hasSourceExpression(ignoringParenImpCasts(cxxMemberCallExpr(
+              on(OptionalMatchType),
+              callee(cxxMethodDecl(hasName("operator bool")))))))
+          .bind("bool-call");
+
+  Finder->addMatcher(expr(anyOf(OperatorBoolMatcher,
+                                ignoringImpCasts(anyOf(OptionalStarMatcher,
+                                                       OptionalArrowMatcher)))),
                      this);
 }
 
@@ -46,6 +56,8 @@ void OptionalAccessCheck::check(
       Result.Nodes.getNodeAs<CXXOperatorCallExpr>("star-call");
   const auto *OptionalArrowCall =
       Result.Nodes.getNodeAs<CXXOperatorCallExpr>("arrow-call");
+  const auto *OptionalBoolCall =
+      Result.Nodes.getNodeAs<ImplicitCastExpr>("bool-call");
 
   if (OptionalStarCall) {
     diag(OptionalStarCall->getExprLoc(),
@@ -59,6 +71,12 @@ void OptionalAccessCheck::check(
          "remove error-prone optional access (via operator '->') to %0")
         << OptionalType->getUnqualifiedType();
     return;
+  }
+
+  if (OptionalBoolCall) {
+    diag(OptionalBoolCall->getExprLoc(),
+         "remove error-prone implicit convertion from %0 to bool")
+        << OptionalType->getUnqualifiedType();
   }
 }
 
